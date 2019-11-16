@@ -12,10 +12,10 @@ def  ApplyGA(GA, Chromosomes, Chromosomes_Fitness): # Because number of chromoso
     # Selection
     if (GA.selection_option == 0): # Tournament
         T = round(random.randint(smallerPopulationSize, GA.tournament_size) * (smallerPopulationSize - 1) + 1) # Tournaments(Random from 1 to smallerPopulationSize)
-        [temp_idx] = max(Chromosomes_Fitness(T), [], 2) # Index to determine the winners
+        idx = max(Chromosomes_Fitness(T), [], 2) # Index to determine the winners
         WinnersIdx = T[sub2ind(numpy.size(T), smallerPopulationSize-1,idx)]          #Winners Indeces
     elif(GA.selection_option == 1): # Truncation
-        tempV = sorted(Chromosomes_Fitness, 'descend') # Sort fitness in ascending order
+        V = sorted(Chromosomes_Fitness, 'descend') # Sort fitness in ascending order
         nbrOfSelections = round(smallerPopulationSize * GA.truncation_percentage / 100) # Number of selected chromosomes
         V = V[1:nbrOfSelections] # Winners Pool
         WinnersIdx = V(round(random.randint(smallerPopulationSize, 1) * (nbrOfSelections - 1) + 1)); # Winners Indeces

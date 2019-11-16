@@ -78,8 +78,8 @@ def lineSegmentIntersect(XY1,XY2):
     ### Argument check.
     #-------------------------------------------------------------------------------
 
-    validateattributes(XY1,{'numeric'},{'2d','finite'})
-    validateattributes(XY2,{'numeric'},{'2d','finite'})
+    #validateattributes(XY1,{'numeric'},{'2d','finite'})
+    #validateattributes(XY2,{'numeric'},{'2d','finite'})
 
     [n_rows_1,n_cols_1] = numpy.size(XY1)
     [n_rows_2,n_cols_2] = numpy.size(XY2)
@@ -124,13 +124,8 @@ def lineSegmentIntersect(XY1,XY2):
 
 
     # Arrange output.
-    out.intAdjacencyMatrix = INT_B
-    out.intMatrixX = numpy.multiply(INT_X , INT_B)
-    out.intMatrixY = numpy.multipliy(INT_Y , INT_B)
-    out.intNormalizedDistance1To2 = u_a
-    out.intNormalizedDistance2To1 = u_b
-    out.parAdjacencyMatrix = PAR_B
-    out.coincAdjacencyMatrix= COINC_B
+    out = [ INT_B, numpy.multiply(INT_X , INT_B), numpy.multipliy(INT_Y , INT_B),u_a,u_b,PAR_B, COINC_B]
+    #intAdjacencyMatrix , intMatrixX , intMatrixY, intNormalizedDistance1To2, intNormalizedDistance2To1 , parAdjacencyMatrix , coincAdjacencyMatrix
 
     return out
 

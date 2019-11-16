@@ -1,6 +1,6 @@
 import math
 import matplotlib
-
+import lineSegmentIntersect
 
 def rotate(x, y, theta):
     R =[[math.cos(theta),-math.sin(theta)],[math.sin(theta),math.cos(theta)]]
@@ -56,14 +56,15 @@ def MoveCarsTimestep(newCenters, sensor_readings, carLines, collision_bools,carL
 
     for car_id in range(1,len(carHeadings)):
     #Draw car
-        carCentre(1) = carLocations(car_id, 1) - (car.length / 2) * math.cos(carHeadings(car_id))
-        carCentre(2) = carLocations(car_id, 2) - (car.length / 2) * math.sin(carHeadings(car_id))
+        carCentre = []
+        carCentre[1] = carLocations(car_id, 1) - (car.length / 2) * math.cos(carHeadings(car_id))
+        carCentre[2] = carLocations(car_id, 2) - (car.length / 2) * math.sin(carHeadings(car_id))
         theta = carHeadings(car_id)
         carLines[car_id] = draw_rectangle(carCentre, theta, car.length, car.width, car_inner_color, car_outer_color, display_option)
 
         #Write Car Number
         if (display_option == 1 or  display_option == 2):
-            matplotlib.text(carCentre(1), carCentre(2), str(car_id))
+            matplotlib.text(carCentre[1], carCentre[2], str(car_id))
 
         #Draw Four Wheels
         if (display_option == 1):
@@ -113,7 +114,7 @@ def MoveCarsTimestep(newCenters, sensor_readings, carLines, collision_bools,carL
         for car2_id in range( 1,len(carHeadings)):
             if (car_id != car2_id):
                 obstacles_lines = [obstacles_lines, prev_carLines[car2_id]] # Step before cars
-        intersections_out = matplotlib.lineSegmentIntersect(obstacles_lines, self_lines)
+        intersections_out = lineSegmentIntersect(obstacles_lines, self_lines)
 
         # Get Sensor Reading
         for i in range (1,len(sensor.angles)):
@@ -134,7 +135,7 @@ def MoveCarsTimestep(newCenters, sensor_readings, carLines, collision_bools,carL
     # Check collision
     th1 = 4 * (len(carHeadings) - 1) + 1
     th2 = len(sensor_lines[car_id][:, 1])+1
-    out1 = [intersections_out.intMatrixX(th1:-1 ,th2:) ,intersections_out.intMatrixY(th1: end, th2: end)] # Car intersects a wall or another car
+    out1 = [intersections_out[th1: ,th2:] ,intersections_out[th1: , th2:]] # Car intersects a wall or another car
     intersections1 = out1[any(out1, 2),:]
 
     if intersections1:
