@@ -1,5 +1,35 @@
 import math
 import matplotlib
+
+
+def rotate(x, y, theta):
+    R =[[math.cos(theta),-math.sin(theta)],[math.sin(theta),math.cos(theta)]]
+    P =[x, y]
+    return R * P
+
+def draw_rectangle(center, theta, height, width, color, edge_color, display_option):
+    x = center(1)
+    y = center(2)
+    x_v = [x ,x + height, x + height, x, x]
+    y_v = [y  , y, y + width , y + width, y]
+    # rotate angle theta
+    R = []
+    R[1,:]=x_v - x
+    R[2,:]=y_v - y
+    XY = [math.cos(theta) - math.sin(theta), math.sin(theta), math.cos(theta)]*R;
+    XY[1,:] = XY[1,:] + x
+    XY[2,:] = XY[2,:] + y
+    R = rotate(height / 2, width / 2, theta)
+
+    X = XY[1,:] - R[1]
+    Y = XY[2,:] - R[2]
+
+    RectLines = [[X[1],Y[1],X[2],Y[2]],[X[2],Y[2],X[3],Y[3]], [X[3],Y[3],X[4],Y[4]],[X[4],Y[4],X[5],Y[5]]]
+
+    if (display_option):
+        rect = matplotlib.fill(X, Y, color)
+        set(rect, 'FaceColor', color, 'EdgeColor', edge_color, 'LineWidth', 1)
+
 # Move Car and Draw Environment - Get Sensor Readings and Collision State
 def MoveCarsTimestep(newCenters, sensor_readings, carLines, collision_bools,carLocations, carHeadings, prev_carLines,steerAngles, car, sensor, env, display_option):
     # Intializations
@@ -29,7 +59,7 @@ def MoveCarsTimestep(newCenters, sensor_readings, carLines, collision_bools,carL
         carCentre(1) = carLocations(car_id, 1) - (car.length / 2) * math.cos(carHeadings(car_id))
         carCentre(2) = carLocations(car_id, 2) - (car.length / 2) * math.sin(carHeadings(car_id))
         theta = carHeadings(car_id)
-        carLines[car_id] = matplotlib.draw_rectangle(carCentre, theta, car.length, car.width, car_inner_color, car_outer_color, display_option)
+        carLines[car_id] = draw_rectangle(carCentre, theta, car.length, car.width, car_inner_color, car_outer_color, display_option)
 
         #Write Car Number
         if (display_option == 1 or  display_option == 2):
@@ -37,209 +67,76 @@ def MoveCarsTimestep(newCenters, sensor_readings, carLines, collision_bools,carL
 
         #Draw Four Wheels
         if (display_option == 1):
-            newCenters = matplotlib.rotate(car.wheelBase / 2, car.width / 2, carHeadings(car_id))
+            newCenters = rotate(car.wheelBase / 2, car.width / 2, carHeadings(car_id))
             newCenters = newCenters + carCentre
             theta = carHeadings(car_id) + steerAngles(car_id)
-            matplotlib.draw_rectangle(newCenters, theta, car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
+            draw_rectangle(newCenters, theta, car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
 
-            newCenters = matplotlib.rotate(car.wheelBase / 2, -car.width / 2, carHeadings(car_id))
+            newCenters = rotate(car.wheelBase / 2, -car.width / 2, carHeadings(car_id))
             newCenters = newCenters + carCentre
             theta = carHeadings(car_id) + steerAngles(car_id)
-            matplotlib.draw_rectangle(newCenters, theta, car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
+            draw_rectangle(newCenters, theta, car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
 
             newCenters = matplotlib.rotate(-car.wheelBase / 2, car.width / 2, carHeadings(car_id))
             newCenters = newCenters + carCentre
-            matplotlib.draw_rectangle(newCenters, carHeadings(car_id), car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
+            draw_rectangle(newCenters, carHeadings(car_id), car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
 
-            newCenters = matplotlib.rotate(-car.wheelBase / 2, -car.width / 2, carHeadings(car_id))
+            newCenters = rotate(-car.wheelBase / 2, -car.width / 2, carHeadings(car_id))
             newCenters = newCenters + carCentre;
-            matplotlib.draw_rectangle(newCenters, carHeadings(car_id), car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
+            draw_rectangle(newCenters, carHeadings(car_id), car.wheelLength, car.wheelWidth, car_wheels_color, car_wheels_color,display_option)
     else:
-        newCenters = [0,0]; #TODO: Should be a meaningful value
+        newCenters = [0,0] #TODO: Should be a meaningful value
 
     #Draw Sensor Beams
     sensor_readings[car_id,:] = [[0 for col in range(len(sensor.angles))] for row in range(1)]
     sensor_lines[car_id] = [[0 for col in range(4)] for row in range(len(sensor.angles))]
     for i in range(1,len(sensor.angles)):
-        p2 = matplotlib.rotate(sensor.range * math.cos(sensor.angles(i)), sensor.range * math.sin(sensor.angles(i)), carHeadings(car_id))
+        p2 = rotate(sensor.range * math.cos(sensor.angles(i)), sensor.range * math.sin(sensor.angles(i)), carHeadings(car_id))
         p2 = p2 + carLocations[car_id,:]
         sensor_lines[car_id][i,:] = [carLocations(car_id, 1),carLocations(car_id, 2),p2(1),p2(2)]
         if (display_option == 1):
             matplotlib.line([sensor_lines[car_id][i, 1],sensor_lines[car_id][i, 3]],[sensor_lines[car_id][i, 2],sensor_lines[car_id][i, 4]], 'color', sensor_beam_color)
 
-# Check cars with firt draw timestep
-for i =1:length(prev_carLines)
-if (isempty(prev_carLines{i}))
-prev_carLines
-{i} = carLines
-{i};
-end
-end
+    # Check cars with firt draw timestep
+    for i in range (1,len(prev_carLines)):
+        if not prev_carLines[i]:
+            prev_carLines[i] = carLines[i]
 
-for car_id = 1:length(carHeadings)
-% Do
-all
-required
-intersetions
-for each car at once
-self_lines = [sensor_lines{car_id};
-carLines
-{car_id}];
-obstacles_lines = [];
-for car2_id = 1:length(carHeadings)
-if (car_id ~= car2_id)
-    obstacles_lines = [obstacles_lines;
-    carLines
-    {car2_id}]; % current
-    cars
-end
-end
-obstacles_lines = [obstacles_lines;
-env.lines];
-for car2_id = 1:length(carHeadings)
-if (car_id ~= car2_id)
-    obstacles_lines = [obstacles_lines;
-    prev_carLines
-    {car2_id}]; % Step
-    before
-    cars
-end
-end
-intersections_out = lineSegmentIntersect(obstacles_lines, self_lines);
+    for car_id in range( 1,len(carHeadings)):
+        # Do all required intersetions for each car at once
+        self_lines = [sensor_lines[car_id],carLines[car_id]]
+        obstacles_lines = []
+        for car2_id in range(1,len(carHeadings)):
+            if (car_id != car2_id):
+                obstacles_lines = [obstacles_lines, carLines[car2_id]] # current cars
+        obstacles_lines = [obstacles_lines, env.lines]
+        for car2_id in range( 1,len(carHeadings)):
+            if (car_id != car2_id):
+                obstacles_lines = [obstacles_lines, prev_carLines[car2_id]] # Step before cars
+        intersections_out = matplotlib.lineSegmentIntersect(obstacles_lines, self_lines)
 
-% Get
-Sensor
-Reading
-for i = 1:length(sensor.angles)
-th = 4 * (length(carHeadings) - 1) + length(env.lines(:, 1));
-out = [intersections_out.intMatrixX(1:th, i) intersections_out.intMatrixY(1: th, i)];
-intersections = out(any(out, 2),:);
+        # Get Sensor Reading
+        for i in range (1,len(sensor.angles)):
+            th = 4 * (len(carHeadings) - 1) + len(env.lines[:, 1])
+            out = [intersections_out.intMatrixX[1:th, i],intersections_out.intMatrixY[1: th, i]]
+            intersections = out[any[out, 2],:]
 
-dist2 = sqrt((intersections(:, 1) - carLocations(car_id, 1)). ^ 2 + (intersections(:, 2) - carLocations(car_id,
-                                                                                                        2)).^ 2);
-[dist id] = min(dist2);
-if (isempty(dist))
-    dist = sensor.range;
-    if (display_option == 1 | | display_option == 2)
-        plot(sensor_lines
-        {car_id}(i, 3), sensor_lines
-        {car_id}(i, 4), 'g.');
-        end
-    elseif(display_option == 1 | | display_option == 2)
-    plot(intersections(id, 1), intersections(id, 2), 'g.');
-end
-sensor_readings(car_id, i) = dist;
-end
+            dist2 = math.sqrt((intersections[:, 1] - carLocations[car_id, 1]) ^ 2 + (intersections[:, 2] - carLocations[car_id, 2])^ 2)
+            dist_id = min(dist2)
+        if not dist:
+            dist = sensor.range
+            if (display_option == 1 or display_option == 2):
+                matplotlib.plot(sensor_lines[car_id][i, 3], sensor_lines[car_id][i, 4], 'g.')
+            elif(display_option == 1 or display_option == 2):
+                matplotlib.plot(intersections[id, 1], intersections[id, 2], 'g.')
+            sensor_readings[car_id, i] = dist
 
-% Check
-collision
-th1 = 4 * (length(carHeadings) - 1) + 1;
-th2 = length(sensor_lines
-{car_id}(:, 1))+1;
-out1 = [intersections_out.intMatrixX(th1:end, th2: end) ...
-intersections_out.intMatrixY(th1: end, th2: end)]; % Car
-intersects
-a
-wall or another
-car
-intersections1 = out1(any(out1, 2),:);
+    # Check collision
+    th1 = 4 * (len(carHeadings) - 1) + 1
+    th2 = len(sensor_lines[car_id][:, 1])+1
+    out1 = [intersections_out.intMatrixX(th1:-1 ,th2:) ,intersections_out.intMatrixY(th1: end, th2: end)] # Car intersects a wall or another car
+    intersections1 = out1[any(out1, 2),:]
 
-% out2 = [intersections_out.intMatrixX(:, length(sensor_lines
-{car_id})+1: end) ...
-                  % intersections_out.intMatrixY(:, length(sensor_lines
-{car_id})+1: end)]; % Car
-intersects
-with a wall
-% intersections2 = out2(any(out2, 2),:);
-%
-% out3 = [intersections_out.intMatrixX(nbrOf_obstacles_lines + 1:end, length(sensor_lines
-{car_id})+1: end) ...
-                  % intersections_out.intMatrixY(nbrOf_obstacles_lines + 1: end, length(sensor_lines
-{car_id})+1: end)]; % Car
-intersects
-with another car
-% [intersections3 cars_collidedWith] = find(sum(out3
-') ~= 0); \
-                                                        %     cars_collidedWith = ceil(cars_collidedWith / 4);
-% cars_collidedWith(cars_collidedWith >= car_id) = cars_collidedWith(cars_collidedWith >= car_id) + 1;
+    if intersections1:
+        collision_bools[car_id] = 1
 
-% out4 = [intersections_out.intMatrixX(:, length(sensor_lines
-{car_id})+2) intersections_out.intMatrixY(:, length(sensor_lines
-{car_id})+2)]; % length(sensor_lines
-{car_id})+2: Front
-Car
-Line
-
-if (~isempty(intersections1))
-collision_bools(car_id) = 1;
-% for k =1:length(prev_carLines)
-           % line(prev_carLines
-{k}(1, [1 3]), prev_carLines
-{k}(1, [2 4]));
-% line(prev_carLines
-{k}(2, [1 3]), prev_carLines
-{k}(2, [2 4]));
-% line(prev_carLines
-{k}(3, [1 3]), prev_carLines
-{k}(3, [2 4]));
-% line(prev_carLines
-{k}(4, [1 3]), prev_carLines
-{k}(4, [2 4]));
-% end
-  % keyboard
-end
-
-end
-
-end
-
-function
-RectLines = draw_rectangle(center, theta, height, width, color, edge_color, display_option)
-x = center(1);
-y = center(2);
-x_v = [x   x + height   x + height   x         x];
-y_v = [y   y          y + width    y + width   y];
-
-% rotate
-angle
-theta
-R(1,:)=x_v - x;
-R(2,:)=y_v - y;
-XY = [cos(theta) - sin(theta);
-sin(theta)
-cos(theta)]*R;
-XY(1,:) = XY(1,:) + x;
-XY(2,:) = XY(2,:) + y;
-R = rotate(height / 2, width / 2, theta);
-
-X = XY(1,:) - R(1);
-Y = XY(2,:) - R(2);
-
-RectLines = [X(1) Y(1) X(2) Y(2);
-X(2)
-Y(2)
-X(3)
-Y(3);
-...
-X(3)
-Y(3)
-X(4)
-Y(4);
-X(4)
-Y(4)
-X(5)
-Y(5)];
-
-if (display_option)
-rect = fill(X, Y, color);
-set(rect, 'FaceColor', color, 'EdgeColor', edge_color, 'LineWidth', 1);
-end
-end
-
-function P = rotate(x, y, theta)
-R =[cos(theta) -sin(theta);
-sin(theta) cos(theta)];
-
-P =[x y];
-P = (R * P')';
-end
