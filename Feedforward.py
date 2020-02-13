@@ -1,21 +1,45 @@
 import numpy
+
+
 def Feedforward(Sample, Chromosome, Network_Arch, unipolarBipolarSelector):
-    #Feed Forward
-    activations = [Sample, 1] # Adding Bias Node
+    # Feed Forward
+    activations = []
+    for i in range(len(Sample)):
+        activations.append(Sample[i])  # Adding Bias Node
+    activations.append(1)
     startId = 0
-    for Layer in range( 2,len(Network_Arch)):
+    v = 3
+    for Layer in range(1, len(Network_Arch)):
         d1 = len(activations)
-        d2 = Network_Arch(Layer)
-        weights = Chromosome[startId + 1: startId + d1 * d2]
-        weigths = numpy.reshape(weights, d1, d2)
-        activations = activations * weigths
+        d2 = Network_Arch[Layer]
+        weights = Chromosome[startId: startId + d1 * d2]
+        #print(len(weights))
+        weights2 = []
+        idx = 0
+        for i in range(int(len(weights) / v)):
+            l = []
+            for j in range(idx, v + idx):
+                l.append(weights[j])
+            weights2.append(l)
+            idx += v
+        activations2 = []
+        for j in range(v):
+            x = 0
+            for k in range(len(activations)):
+                x = x + activations[k] * weights2[k][j]
+            activations2.append(x)
+
+        activations = activations2
         if (unipolarBipolarSelector == 0):
-            activations = 1. / (1 + numpy.exp(-activations))
+            for i in range(len(activations)):
+                activations[i] = 1. / (1 + numpy.exp(-activations[i]))
         else:
-            activations = -1 + 2. / (1 + numpy.exp(-activations))
-        if (Layer != len(Network_Arch)): # Adding Bias
-            activations = [activations, 1]
+            for i in range(len(activations)):
+                activations[i] = -1 + 2. / (1 + numpy.exp(-activations[i]))
+        if (Layer != len(Network_Arch)-1):  # Adding Bias
+            activations.append(1)  # Adding Bias Node
         startId = d1 * d2
+        v -= 1
 
     outputs = activations
 

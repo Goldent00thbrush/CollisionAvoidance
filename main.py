@@ -1,115 +1,126 @@
-import os
-import math
-dirName = 'Results//'
-try:
-    # Directory for Storing Results
-    os.mkdir(dirName)
-    print("Directory " , dirName ,  " Created ")
-except FileExistsError:
-    print("Directory " , dirName ,  " already exists")
+#classes to encapsulate all the data needed
+import numpy
+from numpy.matlib import rand, math
 
-# ANN and GA Configurations
-nbrOfNeuronsInEachHiddenLayer = [3]
-nbrOfOutNodes = 2
-unipolarBipolarSelector = 0 # 0: for Unipolar, -1 for Bipolar
-draw_each_nbrOfGenerations = 1
+from Movecars import MoveCars
 
-GA.nbrOfGenerations_max = 100
-GA.goodFitness = 2000
 
-GA.populationSize = 200 # Population Size
-GA.corssoverProb_mean_percent = 95 # The crossover site is generated from a normal distribution with a mean
-GA.corssoverProb_stdDev_percent = 5 # and standard deviation of 95 % and 5 % of the chromosome length respectively.
-GA.mutationProb = 0.10 # Mutation Rate(Probability)(on average)
-GA.selection_option = 0 # 0: Tournament, 1: Truncation
-GA.tournament_size = 10 # Tournament Size if selection_option = 1
-GA.truncation_percentage = 40 # Percentage of Truncation if selection_option = 1
-GA.replacement_option = 0 # 0: All children replace parents unless best ceil(PercentBestParentsToKeep),
-                            # 1: Use good parents based on tournaments and add other children
-                            # 2: Use good parents
-                            # (From all cars) based on tournaments and add other children
-GA.PercentBestParentsToKeep = 10
-GA.keptParentsAreGolobal_option = 1 # 1: Kept parents are from all best cars
-GA.weightsRange = 1 # Intially wights are random following a uniform distrubution from -weightsRange to weightsRange.Mutation adds randoweights follwoing the same distribution.
+class settings:
+    def __init__(self, nbrOfNeuronsInEachHiddenLayer, nbrOfOutNodes,unipolarBipolarSelector, dt, timeout, smallXYVariance, num,num2):
+        self.nbrOfNeuronsInEachHiddenLayer = nbrOfNeuronsInEachHiddenLayer
+        self.nbrOfOutNodes = nbrOfOutNodes
+        self.unipolarBipolarSelector = unipolarBipolarSelector # unipolar and bipolar
+        self.dt = dt
+        self.timeout = timeout
+        self.smallXYVariance = smallXYVariance
+        self.num = num
+        self.num2 = num2
 
-# Car and sensor Configurations(Per Chromosome)
-car.wheelBase = 2.6 # [Meters] The distance between the two axles.Real Car is 2.6.
-car.width = 1.7 # [Meters] Real Car is 1.7.
-car.length = 4.3 # [Meters] Real Car is 4.3.
-car.wheelLength = 0.45 # [Meters]
-car.wheelWidth = 0.22 # [Meters]
+    def set_nbrOfInputNodes_NetworkArch(self,nbrOfInputNodes):
+        self.nbrOfInputNodes = nbrOfInputNodes
+        self.NetworkArch = [self.nbrOfInputNodes,self.nbrOfNeuronsInEachHiddenLayer, self.nbrOfOutNodes]
+        self.nbrOfTimeStepsToTimeout = self.timeout / self.dt
 
-sensor.angles = [0,10,20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180] * math.pi / 180 # [Degrees]
-#sensor.angles = [45 90 135] * pi / 180 # [Degrees]
-sensor.range = 25 # [Meters]
-sensor.sensor_dot_radius_ratio = 0.05 # sensor_circle_radius = ratio * car.width;
+    def collison_value(self):
+        self.collision_distance = int(input("Enter minimum distance for collision: "))
+        if (self.collision_distance <0):
+            while self.collision_distance <0:
+                self.collision_distance = int(input("Enter minimum distance for collision: "))
 
-dt = 0.1 # [Seconds] Time Step
-timeout = 5 # If, during timeout[seconds], both of the variances of car location x and y are smallXYVariance = (8) ^ 2;
-            # smaller than or qual smallXYVariance[meters ^ 2], fitness estimation stops(timeout).
-carSpeed = 10 # [meters / seconds] 10 is a good value
 
-display_option = 3; # 0: disable drawing, 1: display every chromosome, 2: display only cars without wheels and beams, 3:
-timeToStartDraw = 5000000 # draws after timeToStartDraw
-save_option = 0 # 1: save images
-camera_mode = 1 # 0: Centered within cameraVisibleRange 1: Has full Map visible
-cameraVisibleRange = 100 # Drawing Camera Range(The bigger, the higher world) (60 is good value)
+class  GenticAlgorithmSettings:
+    def __init__(self, nbrOfGenerations_max,goodFitness,populationSize, corssoverProb_mean_percent, corssoverProb_stdDev_percent,mutationProb,selection_option,tournament_size,
+                 truncation_percentage,replacement_option,PercentBestParentsToKeep,keptParentsAreGolobal_option,weightsRange,chromosomeLength ):
+        self.nbrOfGenerations_max = nbrOfGenerations_max
+        self.goodFitness = goodFitness
+        self.populationSize = populationSize
+        self.corssoverProb_mean_percent = corssoverProb_mean_percent
+        self.corssoverProb_stdDev_percent = corssoverProb_stdDev_percent
+        self.mutationProb = mutationProb
+        self.selection_option = selection_option  # Tournament or  Truncation
+        self.tournament_size = tournament_size
+        self.truncation_percentage = truncation_percentage
+        self.replacement_option = replacement_option
+        self.PercentBestParentsToKeep = PercentBestParentsToKeep
+        self.keptParentsAreGolobal_option = keptParentsAreGolobal_option
+        self.weightsRange = weightsRange
+        self.chromosomeLength = chromosomeLength
 
-# Environment Configurations
-# env.nbrOfCars = 2
-# env.dx_dy = [15,120,90, 40, 40 ,50, - 20, 15, 30, 50, - 15, - 40, - 30, - 40, 15, - 20, - 35, - 40, - 25, 50, 20, 40, - 15, - 30, - 20, - 60, - 40, 60, - 15, - 30, - 50 ,15, -15 ,- 30, 60, - 70, - 80, - 70, 15, 55 ,75, - 65]
-# env.intial_point = [-7 - 20]
-# env.start_points = [0,0;0,160]; # Car starting Positions[x, y; x, y;...]
-# env.start_headings = [90 - 90] * math.pi / 180 # Car Starting Heading Counter Clock Wise[Degrees]
+class CarSettings:
+    def __init__(self,wheelBase, width,length,wheelLength,wheelWidth, speed):
+        self.wheelBase = wheelBase
+        self.width = width
+        self.length = length
+        self.wheelLength = wheelLength
+        self.wheelWidth = wheelWidth
+        self.speed = speed
 
-car.width = 2.5
-num = 100
-num2 = 10
-env.nbrOfCars = 8
-env.dx_dy = [num,num, - num, - num]
-env.intial_point = [0,0]
-#env.start_points = ((num - 1 - num2) * rand(env.nbrOfCars, 2) + 1 + num2 / 2); # Car Starting Positions[x,y; x,y;...]
-env.start_points = [20,30;40,30;60,30;80,30;20,60;40,60;60,60;80,60]
-env.start_headings = (180 * rand(1, env.nbrOfCars) - 90) * math.pi / 180 # Car Starting Heading Counter Clock Wise[Degrees]
+class SensorSettings:
+    def __init__(self, range, sensor_dot_radius_ratio):
+        # self.angles = angles
+        self.range = range
+        self.sensor_dot_radius_ratio = sensor_dot_radius_ratio
 
-env.start_steerAngles = zeros(1, env.nbrOfCars) * pi / 180 # [Degrees] Counter Clock Wise(For all Cars)
-env.destination_dot_radius_ratio = 1; % sensor_circle_radius = ratio * car.width
+    def sensor_size(self):
+            self.size= int(input("Enter the number of beams: "))
+            if (self.size < 0):
+                while self.size < 0:
+                    self.size= int(input("Enter the number of beams: "))
 
-# Calculate Number of Input and Output NodesActivations
-nbrOfInputNodes = length(sensor.angles); #= Dimention of Any Input Samples
-Network_Arch = [nbrOfInputNodes,nbrOfNeuronsInEachHiddenLayer,nbrOfOutNodes]
 
-# Calculate chromosome Size
-GA.chromosomeLength = 0
-previousNbrOfNeurons = Network_Arch(1)
+class EnvSettings:
+    def __init__(self, nbrOfCars, dx_dy, intial_point, start_points,destination_dot_radius_ratio ):
+        self.nbrOfCars = nbrOfCars
+        self.dx_dy = dx_dy
+        self.intial_point = intial_point
+        self.start_points = start_points
+        self.start_headings = numpy.array((180 * rand(1, self.nbrOfCars) - 90) * math.pi / 180).reshape(-1,).tolist()[0]
+        self.start_steerAngles = [0] # is it a bunch of zeros ?????????????????????????????
+        self.destination_dot_radius_ratio = destination_dot_radius_ratio
 
-for i=2:length(Network_Arch)
-GA.chromosomeLength = GA.chromosomeLength + (previousNbrOfNeurons + 1) * Network_Arch(i);
-previousNbrOfNeurons = Network_Arch(i);
-end
 
-# Initialization
-Chromosomes = cell(1, env.nbrOfCars);
-for car_id=1:env.nbrOfCars
-Chromosomes
-{car_id} = zeros(GA.populationSize, GA.chromosomeLength);
-Chromosomes_Fitness
-{car_id} = zeros(GA.populationSize, 1);
-BestFitness_perGeneration(car_id,:) = -1 * ones(1, GA.nbrOfGenerations_max);
-AvgFitness_perGeneration(car_id,:) = -1 * ones(1, GA.nbrOfGenerations_max);
-end
+#object decelerations and variables
+settings_obj = settings(3,2,0,0.1,5,math.pow(8,2),100,10)
+GA = GenticAlgorithmSettings( 100,2000,5,95, 5, 0.10, 0, 10,40,0,10, 1,1,0)
+car = CarSettings(2.6, 2.5,4.3,0.45,0.22,10)
 
-nbrOfTimeStepsToTimeout = timeout / dt
+# angles = [0,10,20,30 ,40 ,50 ,60 ,70 ,80 ,90 ,100 ,110, 120, 130, 140, 150, 160, 170, 180]
+# for i in range(len(angles)):
+#     angles[i] = angles[i] * math.pi / 180
+sensor = SensorSettings(25,0.05) #angles,25,0.05)
+sensor.sensor_size()
+env = EnvSettings(1,[settings_obj.num, settings_obj.num, - settings_obj.num, - settings_obj.num], [0,0],[20,30],1)
 
-# Random Chromosomes the Go Ahead !
-for car_id = 1:env.nbrOfCars
-for pop = 1:GA.populationSize
-Chromosomes
-{car_id}(pop,:) = GA.weightsRange * (2 * rand(1, GA.chromosomeLength) - 1);
-end
-end
+settings_obj.set_nbrOfInputNodes_NetworkArch(sensor.size)
 
-MoveCars;
+previousNbrOfNeurons = settings_obj.NetworkArch[0]
+for i in range(1,len(settings_obj.NetworkArch)): #length of chromosome based on Network Architecture - number of nodes and biases
+    GA.chromosomeLength = GA.chromosomeLength + (previousNbrOfNeurons + 1) * settings_obj.NetworkArch[i]
+    previousNbrOfNeurons = settings_obj.NetworkArch[i]
 
-# Save Video
-# viobj = close(aviobj)
+Chromosomes = [] #population size  * chromosome length
+# for i in range(GA.populationSize):
+#     l = []
+#     for j in range(GA.chromosomeLength):
+#         l.append(0)
+#     Chromosomes.append(l)
+
+Chromosomes_Fitness= [] #population size
+for i in range(GA.populationSize):
+    Chromosomes_Fitness.append(0)
+
+BestFitness_perGeneration = [] #number of max generations
+AvgFitness_perGeneration = [] #number of max generations
+for i in range(GA.nbrOfGenerations_max):
+    BestFitness_perGeneration.append(-1) #intialize with -1
+    AvgFitness_perGeneration.append(-1)
+
+for pop in range(GA.populationSize):
+    l = numpy.array(GA.weightsRange * (2 * rand(1, GA.chromosomeLength) - 1)).reshape(-1,).tolist()# -1<value<1
+    Chromosomes.append(l)
+
+settings_obj.collison_value()
+
+MoveCars(env, settings_obj.nbrOfTimeStepsToTimeout, GA, settings_obj.dt,sensor, car, settings_obj.num,
+         settings_obj.smallXYVariance, Chromosomes_Fitness, Chromosomes, settings_obj.NetworkArch, settings_obj.unipolarBipolarSelector, settings_obj.collision_distance)
+
